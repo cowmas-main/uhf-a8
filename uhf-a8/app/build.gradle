@@ -1,0 +1,60 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion "30.0.1"
+    ndkVersion '21.3.6528147'
+    defaultConfig {
+        applicationId "com.example.uhf"
+        minSdkVersion 22
+        targetSdkVersion 29
+        versionCode 4
+        versionName "1.6.0"
+    }
+
+    signingConfigs {
+        debug {
+            File strFile = new File("/uhf-A8_release.jks")
+            storeFile file(strFile)
+            storePassword "123456"
+            keyPassword "123456"
+            keyAlias "uhf-A8-key"
+        }
+        release {
+            File strFile = new File("/uhf-A8_release.jks")
+            storeFile file(strFile)
+            storePassword "123456"
+            keyPassword "123456"
+            keyAlias "uhf-A8-key"
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+
+        // 自定义apk名称q
+        android.applicationVariants.all { variant ->
+            variant.outputs.all {
+                outputFileName = "UHF-A8_v${defaultConfig.versionName}.apk"
+            }
+        }
+    }
+
+    lintOptions {
+        checkReleaseBuilds false
+        // Or, if you prefer, you can continue to check for errors in release builds,
+        // but continue the build even when errors are found:
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.*'])
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+}
