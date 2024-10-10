@@ -259,6 +259,7 @@
                 android:text="@string/btClear"
                 android:textColor="@color/white"
                 android:textSize="15sp" />
+
         </LinearLayout>
         <LinearLayout
             android:visibility="gone"
@@ -282,6 +283,11 @@
                 android:layout_height="wrap_content"
                 android:text="s"/>
         </LinearLayout>
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="122dp"
+            android:src="@mipmap/ic_banner_foreground" />
     </LinearLayout>
 
     <View
@@ -372,7 +378,7 @@
 
         <View
             android:layout_width="match_parent"
-            android:layout_height="1px"
+            android:layout_height= "1px"
             android:background="@color/gray1" />
 
         <ListView

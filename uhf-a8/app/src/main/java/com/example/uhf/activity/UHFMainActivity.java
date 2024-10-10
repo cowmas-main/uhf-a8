@@ -14,7 +14,6 @@ import com.example.uhf.fragment.UHFTagAntMsgFragment;
 import com.example.uhf.fragment.UHFUpgradeFragment;
 import com.example.uhf.fragment.UHFWriteFragment;
 
-
 import com.rscja.utility.StringUtility;
 
 import android.Manifest;
@@ -26,7 +25,11 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 
+import android.os.Handler;
+import android.provider.CalendarContract;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.fragment.app.FragmentManager;
@@ -52,16 +55,16 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
     private final static String TAG = "MainActivity";
     private FragmentTabHost mTabHost;
     private FragmentManager fm;
-    public boolean isBuzzer=true;
+    public boolean isBuzzer=false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Log.e("zp_add", "-------UHFMainActivity  1--------");
         if(BuildConfig.DEBUG) {
-           setTitle(String.format("%s(v%s-debug)", getString(R.string.app_name), BuildConfig.VERSION_NAME));
+           setTitle(String.format("%s", getString(R.string.app_name)));
         } else {
-           setTitle(String.format("%s(v%s)", getString(R.string.app_name), BuildConfig.VERSION_NAME));
+           setTitle(String.format("%s", getString(R.string.app_name)));
         }
 //------
         initViewPageData2();
@@ -70,8 +73,20 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
 //------
         initUHF();
         checkReadWritePermission();
+
+        autoClickBtInventory();
     }
 
+    private void autoClickBtInventory() {
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Button btInventory = findViewById(R.id.BtInventory);
+                if (btInventory != null) {btInventory.performClick();
+                }
+            }
+        }, 3000); // Delay in milliseconds
+    }
 
     private void initViewPageData2(){
         lstFrg.add(new UHFReadTagFragment());
@@ -102,7 +117,6 @@ public class UHFMainActivity extends BaseTabFragmentActivity {
         if (mReader != null) {
             mReader.free();
         }
-
     }
 
     public boolean vailHexInput(String str) {

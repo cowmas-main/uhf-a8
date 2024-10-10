@@ -6,7 +6,7 @@ android {
     ndkVersion '21.3.6528147'
     defaultConfig {
         applicationId "com.example.uhf"
-        minSdkVersion 22
+        minSdkVersion 24
         targetSdkVersion 29
         versionCode 4
         versionName "1.6.0"
@@ -14,14 +14,14 @@ android {
 
     signingConfigs {
         debug {
-            File strFile = new File("/uhf-A8_release.jks")
+            File strFile = new File("./uhf-A8_release.jks")
             storeFile file(strFile)
             storePassword "123456"
             keyPassword "123456"
             keyAlias "uhf-A8-key"
         }
         release {
-            File strFile = new File("/uhf-A8_release.jks")
+            File strFile = new File("./uhf-A8_release.jks")
             storeFile file(strFile)
             storePassword "123456"
             keyPassword "123456"

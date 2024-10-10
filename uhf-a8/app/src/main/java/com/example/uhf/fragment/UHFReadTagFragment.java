@@ -423,13 +423,9 @@ public class UHFReadTagFragment extends KeyDownFragment {
                                 setViewEnabled(true);
                             }
                         });
-
                     }
-
-
                 }
             });
-
         }
     }
 
@@ -514,10 +510,8 @@ public class UHFReadTagFragment extends KeyDownFragment {
             return epc;
         }
     }
-
     @Override
     public void myOnKeyDwon() {
         readTag();
     }
-
 }
