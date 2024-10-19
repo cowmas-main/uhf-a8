@@ -20,6 +20,7 @@ import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.uhf.R;
 import com.example.uhf.activity.UHFMainActivity;
@@ -29,12 +30,20 @@ import com.example.uhf.tools.UIHelper;
 import com.rscja.deviceapi.RFIDWithUHFA8;
 import com.rscja.deviceapi.entity.UHFTAGInfo;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 
 public class UHFReadTagFragment extends KeyDownFragment {
     private static String TAG = "UHFReadTagFragment";
@@ -116,7 +125,7 @@ public class UHFReadTagFragment extends KeyDownFragment {
         BtInventory = (Button) view.findViewById(R.id.BtInventory);
         LvTags = (ListView) view.findViewById(R.id.LvTags);
         adapter = new SimpleAdapter(getContext(), tagList, R.layout.listtag_items,
-                new String[]{TAG_EPC, TAG_LEN, TAG_COUNT, TAG_RSSI, TAG_ANT},
+                new String[]{TAG_EPC, TAG_LEN, TAG_COUNT, TAG_RSSI  , TAG_ANT},
                 new int[]{R.id.TvTagUii, R.id.TvTagLen, R.id.TvTagCount, R.id.TvTagRssi, R.id.TvAnt});
         LvTags.setAdapter(adapter);
 
@@ -263,6 +272,88 @@ public class UHFReadTagFragment extends KeyDownFragment {
      *
      * @param
      */
+
+    private Map<String, TagTimestamp> watchedTags = new HashMap<>();
+
+    private static class TagTimestamp {
+        long start_timestamp = 0;
+        long end_timestamp = 0;
+        List<String> antValues = new ArrayList<>();
+    }
+
+
+    private void sendDataOverHttp(final JSONObject jsonObject) {
+
+        new Thread(new Runnable() {
+            @Override
+            public void run(){
+                try {
+                    URL url = new URL("http://app.cowmas.com:8080/scanner-data-write");
+                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                    connection.setRequestMethod("POST");
+                    connection.setRequestProperty("Content-Type", "application/json");
+                    connection.setDoOutput(true);
+
+                    // Write JSON data to output stream
+                    OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
+                    writer.write(jsonObject.toString());
+                    writer.flush();
+                    writer.close();
+
+                    // Get response code
+                    int responseCode = connection.getResponseCode();
+                    String toastMessage;
+
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
+                        // Request successful
+                        toastMessage = "Data sent successfully!";
+
+                        try {
+                            //Remove tag from store after it was sent succefullly
+                            watchedTags.remove(jsonObject.getString("tag_id"));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            // Handle the exception, e.g., log an error message
+                            toastMessage = "Error removing tag: " + e.getMessage();
+
+                        }
+
+                    } else {
+                        // Request failed
+                        toastMessage= "Error sending data: " + responseCode + jsonObject.toString();
+                        //Toast.makeText(mContext, toastMessage, Toast.LENGTH_SHORT).show();
+                    }
+                    final String finalToastMessage = toastMessage;
+                    connection.disconnect();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    // Handle IO exception
+                }
+            }
+        }).start();
+    }
+    private void sendTagDataToBackend(String epcAndTid) {
+        TagTimestamp tagTimestamp = watchedTags.get(epcAndTid);
+        if (tagTimestamp != null) {
+            // Create JSON object
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put("tag_id", epcAndTid);
+                jsonObject.put("start_timestamp", tagTimestamp.start_timestamp);
+                jsonObject.put("end_timestamp", tagTimestamp.end_timestamp);
+                jsonObject.put("antenna", 1);
+                // Add any other data you want to send
+            } catch (JSONException e) {
+                e.printStackTrace();
+                // Handle JSON exception
+                return; // Exit if JSON creation fails
+            }
+
+            // Send data using HTTP POST request
+            sendDataOverHttp(jsonObject);
+        }
+    }
+
     private void addDataToList(String epcAndTid, String rssi, String ant) {
         if (StringUtils.isNotEmpty(epcAndTid)) {
             int index = checkIsExist(epcAndTid);
@@ -283,6 +374,23 @@ public class UHFReadTagFragment extends KeyDownFragment {
             tv_totalNum.setText(String.valueOf(++totalNum));
             adapter.notifyDataSetChanged();
         }
+
+        // Getting current time
+        long currentTime = System.currentTimeMillis();
+        TagTimestamp tagTimestamp = watchedTags.get(epcAndTid);
+        if (tagTimestamp == null) {
+            tagTimestamp = new TagTimestamp();
+            tagTimestamp.start_timestamp = currentTime;
+            tagTimestamp.end_timestamp = currentTime;
+            watchedTags.put(epcAndTid, tagTimestamp);
+        }
+
+        if (currentTime - tagTimestamp.end_timestamp > 1000) {
+            tagTimestamp.antValues.add(ant);
+            sendTagDataToBackend(epcAndTid);
+        }
+
+        tagTimestamp.end_timestamp = currentTime;
     }
 
     private long mStartTime;
