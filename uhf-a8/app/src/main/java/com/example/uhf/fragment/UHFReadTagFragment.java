@@ -1,9 +1,12 @@
 package com.example.uhf.fragment;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
+import android.provider.Settings;
+import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -342,6 +345,8 @@ public class UHFReadTagFragment extends KeyDownFragment {
                 jsonObject.put("start_timestamp", tagTimestamp.start_timestamp);
                 jsonObject.put("end_timestamp", tagTimestamp.end_timestamp);
                 jsonObject.put("antenna", 1);
+
+                jsonObject.put("device_id", Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID));
                 // Add any other data you want to send
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -352,6 +357,39 @@ public class UHFReadTagFragment extends KeyDownFragment {
             // Send data using HTTP POST request
             sendDataOverHttp(jsonObject);
         }
+    }
+
+    // Method to get unique device ID
+    private String getUniqueDeviceId() {
+        String deviceId = "";
+        try {
+            // Choose one of the methods below based on your device capabilities and preferences:
+
+            // 1. Using Settings.Secure.ANDROID_ID (less reliable on newer devices)
+            //deviceId = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
+
+            // 2. Using TelephonyManager.getDeviceId() (requires READ_PHONE_STATE permission)
+            TelephonyManager telephonyManager = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
+            deviceId = telephonyManager.getDeviceId();
+
+            // 3. Using Build.SERIAL (available on some devices)
+            // deviceId = Build.SERIAL;
+
+            // 4. Generating a UUID and storing it in SharedPreferences for persistence
+            // SharedPreferences preferences = getSharedPreferences("device_prefs", Context.MODE_PRIVATE);
+            // deviceId = preferences.getString("device_id", "");
+            // if (deviceId.isEmpty()) {
+            //     deviceId = UUID.randomUUID().toString();
+            //     preferences.edit().putString("device_id", deviceId).apply();
+            // }
+
+            // ... other methods (IMEI, MAC address, etc.) - consider privacy implications
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Handle exceptions and consider fallback mechanisms
+        }
+        return deviceId;
     }
 
     private void addDataToList(String epcAndTid, String rssi, String ant) {
