@@ -344,7 +344,13 @@ public class UHFReadTagFragment extends KeyDownFragment {
                 jsonObject.put("tag_id", epcAndTid);
                 jsonObject.put("start_timestamp", tagTimestamp.start_timestamp);
                 jsonObject.put("end_timestamp", tagTimestamp.end_timestamp);
-                jsonObject.put("antenna", 1);
+                if (tagTimestamp.antValues != null && !tagTimestamp.antValues.isEmpty()) {
+                    int lastIndex = tagTimestamp.antValues.size() - 1;
+                    jsonObject.put("antenna", tagTimestamp.antValues.get(lastIndex));
+                } else {
+                    // Handle case where antValuesis null or empty
+                    jsonObject.put("antenna", 0); // Or any default value
+                }
 
                 jsonObject.put("device_id", Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID));
                 // Add any other data you want to send
